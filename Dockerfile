@@ -1,14 +1,13 @@
-# Use Eclipse Temurin OpenJDK 21 as the base image
-FROM eclipse-temurin:21-jre
 
-# Set the working directory inside the container
+# Use Maven to build the project, then use a slim JRE image to run
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
+COPY . .
+RUN mvn clean package -DskipTests
 
-# Copy the built jar file into the container
-COPY target/*.jar app.jar
-
-# Expose the default port (change if your app uses a different port)
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+# Copy only the built jar from the previous stage
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Run the Spring Boot application
 ENTRYPOINT ["java", "-jar", "app.jar"]
